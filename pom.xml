@@ -22,9 +22,9 @@
         <lombok>1.18.26</lombok>
         <fastjson>1.2.83</fastjson>
         <commons.lang>2.6</commons.lang>
-        <druid>1.2.9</druid>
+        <druid>1.2.23</druid>
         <pagehelper>1.4.0</pagehelper>
-        <aliyun.sdk.oss>3.15.0</aliyun.sdk.oss>
+        <aliyun.sdk.oss>3.17.0</aliyun.sdk.oss>
         <knife4j>2.0.9</knife4j>
         <aspectj>1.9.7</aspectj>
         <jjwt>0.9.1</jjwt>
