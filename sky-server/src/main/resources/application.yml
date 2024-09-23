@@ -1,5 +1,10 @@
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   profiles:
@@ -13,11 +18,19 @@ spring:
     url: jdbc:mysql://${sky.datasource.host}:${sky.datasource.port}/${sky.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
     username: ${sky.datasource.username}
     password: ${sky.datasource.password}
+  ai:
+    zhipuai:
+      base-url: ${sky.ai.zhipuai.base-url}
+      api-key: ${sky.ai.zhipuai.api-key}
+      chat:
+        options:
+          model: glm-4-flash
   redis:
     host: ${sky.redis.host}
     port: ${sky.redis.port}
     password: ${sky.redis.password}
     database: ${sky.redis.database}
+
 
 mybatis:
   #mapper配置文件

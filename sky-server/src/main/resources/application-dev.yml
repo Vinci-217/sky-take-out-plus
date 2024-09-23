@@ -5,7 +5,12 @@ sky:
     port: 3306
     database: sky_take_out
     username: root
-    password: 123456
+    password: 20040217
+  ai:
+    zhipuai:
+      api-key: 7ec775e28bc3e1a6ebffcf3a4c632ee3.ENPC9Hj2PDyJy2oN
+      base-url: https://open.bigmodel.cn/api/paas/
+
   alioss:
     endpoint:
     access-key-id:

@@ -58,3 +58,79 @@ AI对于我们来说越来越重要，所以引入AI对于项目来说也是一�
         </dependency>
 ```
 
+### 实现对话功能
+
+- 相关代码如下
+
+```
+package com.sky.controller.ai;
+
+import org.springframework.ai.chat.client.ChatClient;
+
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
+
+@RestController
+class AIController {
+
+    private final ChatClient chatClient;
+
+    public AIController(ChatClient.Builder chatClientBuilder) {
+        this.chatClient = chatClientBuilder.build();
+    }
+
+    @GetMapping("/ai")
+    String generation(String userInput) {
+        return this.chatClient.prompt()
+                .user(userInput)
+                .call()
+                .content();
+    }
+    
+}
+```
+
+![image-20240923153902568](https://s2.loli.net/2024/09/23/HiSo21fOauVmeZl.png)
+
+![image-20240923153927244](https://s2.loli.net/2024/09/23/G6i7cSI5lAqQYv2.png)
+
+- 将代码修改后，实现流式显示对话内容
+
+```
+    @GetMapping(value = "/ai")
+    Flux<String> generation(String userInput) {
+        Flux<String> output = chatClient.prompt()
+                .user(userInput)
+                .stream()
+                .content();
+        return output;
+    }
+```
+
+- 配置提示词
+
+```
+package com.sky.config;
+
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class AIConfiguration {
+
+    @Bean
+    ChatClient chatClient(ChatClient.Builder builder) {
+        return builder.defaultSystem("你将作为一个营养家，给用户提出购餐建议。")
+                .build();
+    }
+}
+
+```
+
+![image-20240923155432278](https://s2.loli.net/2024/09/23/cdUCrXf9HSI4nG7.png)
+
+完成AI对话问答的功能
