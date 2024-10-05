@@ -10,7 +10,6 @@ sky:
     zhipuai:
       api-key: 7ec775e28bc3e1a6ebffcf3a4c632ee3.ENPC9Hj2PDyJy2oN
       base-url: https://open.bigmodel.cn/api/paas/
-
   alioss:
     endpoint:
     access-key-id:
@@ -21,6 +20,11 @@ sky:
     port: 6379
     password:
     database: 10
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
   wechat:
     appid:
     secret:
