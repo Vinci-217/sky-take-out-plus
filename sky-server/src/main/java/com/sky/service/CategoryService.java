@@ -46,4 +46,6 @@ public interface CategoryService {
      * @return
      */
     List<Category> list(Integer type);
+
+    List<Long> listAllIds();
 }

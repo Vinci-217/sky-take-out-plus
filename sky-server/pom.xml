@@ -154,6 +154,22 @@
             <version>1.0.0-M2</version>
         </dependency>
 
+<!--        布隆过滤器-->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.0.1-jre</version>
+        </dependency>
+
+<!--        Caffine的依赖-->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+
+
+
 
     </dependencies>
 

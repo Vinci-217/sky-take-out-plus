@@ -29,23 +29,26 @@ class AIController {
 
     // TODO: 流式响应和UTF-8编码的冲突尚未解决
     @GetMapping(value = "/ai", produces = "text/plain; charset=UTF-8")
-    Flux<String> generation(String userInput) {
+    public String generation(String userInput) {
+
+        // 发起聊天请求并处理响应
+        String output = chatClient.prompt()
+                .messages(historyMessage)
+                .user(userInput)
+                .call()
+                .content();
+
+
         // 用户输入的文本是UserMessage
         historyMessage.add(new UserMessage(userInput));
 
         // 发给AI前对历史消息对列的长度进行检查
-        if(historyMessage.size() > maxLen){
-            historyMessage = historyMessage.subList(historyMessage.size()-maxLen-1,historyMessage.size());
+        if (historyMessage.size() > maxLen) {
+            historyMessage = historyMessage.subList(historyMessage.size() - maxLen - 1, historyMessage.size());
         }
 
-        // TODO: 实现历史消息
-
-        // 发起聊天请求并处理响应
-        Flux<String> output = chatClient.prompt()
-                .user(userInput)
-                .stream()
-                .content();
         return output;
     }
+
 
 }

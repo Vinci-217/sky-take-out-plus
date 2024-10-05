@@ -60,4 +60,8 @@
         </if>
         order by sort asc,create_time desc
     </select>
+    <select id="listAllIds" resultType="java.lang.Long">
+        select id from category
+        order by sort asc,create_time desc
+    </select>
 </mapper>

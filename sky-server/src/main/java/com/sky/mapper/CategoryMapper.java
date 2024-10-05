@@ -48,4 +48,10 @@ public interface CategoryMapper {
      * @return
      */
     List<Category> list(Integer type);
+
+    /**
+     * 查询所有分类的id
+     * @return
+     */
+    List<Long> listAllIds();
 }

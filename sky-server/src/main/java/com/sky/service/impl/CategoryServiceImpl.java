@@ -129,4 +129,13 @@ public class CategoryServiceImpl implements CategoryService {
     public List<Category> list(Integer type) {
         return categoryMapper.list(type);
     }
+
+    /**
+     * 查询所有分类
+     *
+     * @return
+     */
+    public List<Long> listAllIds() {
+        return categoryMapper.listAllIds();
+    }
 }
