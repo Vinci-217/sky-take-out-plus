@@ -8,7 +8,7 @@
 
 - [x] 引入Spring AI、实现AI对话的功能，基于原有Prompt对用户给出合理的点餐建议
 - [x] 解决Redis缓存穿透、击穿、雪崩
-- [ ] 借助MQ实现异步订单处理，优化用户下单体验
+- [ ] 借助RabbitMQ实现异步订单处理，并使用WebSocket推送订单成功消息，优化用户下单体验
 - [ ] 引入ElasticSearch实现菜品全局搜索
 
 ## 优化1：引入AI问答系统
@@ -641,3 +641,144 @@ public class DishController {
 至此，缓存的三大问题解决完毕！
 
 补充：作者后来才知道Redisson原来有现成的方法，后续抽空使用Redisson优化
+
+## 优化3：借助RabbitMQ异步订单处理，WebSocket推送消息到客户端
+
+在中午和晚上的高峰期时刻，有时候可能会出现用户下订单的时候等待时间过长，不知道订单是否下单成功的情况，于是我们决定采用RabbitMQ对此进行优化。即将订单先放到消息队列中，然后等消息队列里面的订单处理完成之后，再通过WebSocket返回到客户端
+
+RabbitMQ解释（TODO）
+
+WebSocket解释（TODO）
+
+Docker安装RabbitMQ
+
+```
+docker pull rabbitmq:latest
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:latest
+```
+
+导入RabbitMQ的依赖
+
+```
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+```
+
+yml文件进行配置
+
+```
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+```
+
+对RabbitMQ配置
+
+```
+package com.sky.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.core.Binding;
+
+@Configuration
+public class RabbitMQConfig {
+    public static final String ORDER_QUEUE = "order.queue";
+    public static final String ORDER_EXCHANGE = "order.exchange";
+    public static final String ORDER_ROUTING_KEY = "order.routing.key";
+
+    /**
+     * 创建队列
+     * @return
+     */
+    @Bean
+    public Queue orderQueue() {
+        return new Queue(ORDER_QUEUE);
+    }
+
+    /**
+     * 创建交换机
+     * @return
+     */
+    @Bean
+    public TopicExchange orderExchange() {
+        return new TopicExchange(ORDER_EXCHANGE);
+    }
+
+    /**
+     * 绑定队列到交换机
+     * @param orderQueue
+     * @param orderExchange
+     * @return
+     */
+    @Bean
+    public Binding orderBinding(Queue orderQueue, TopicExchange orderExchange) {
+        return org.springframework.amqp.core.BindingBuilder
+                .bind(orderQueue)
+                .to(orderExchange)
+                .with(ORDER_ROUTING_KEY);
+    }
+}
+
+```
+
+针对用户的下订单的Controller，修改submit方法（需要先注入RabbitTemplate
+
+```
+    @PostMapping("/submit")
+    @ApiOperation("用户下单")
+    public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
+        log.info("用户下单：{}", ordersSubmitDTO);
+        // 将下单请求发送到 RabbitMQ 队列
+        rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, RabbitMQConfig.ORDER_ROUTING_KEY, ordersSubmitDTO);
+        return Result.success("下单请求已接收，正在处理中...");
+    }
+```
+
+然后新建一个表示Rabbit的Listener的类
+
+```
+package com.sky.service;
+
+import com.alibaba.fastjson.JSON;
+import com.sky.config.RabbitMQConfig;
+import com.sky.dto.OrdersSubmitDTO;
+import com.sky.vo.OrderSubmitVO;
+import com.sky.websocket.WebSocketServer;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+@Slf4j
+public class OrderMessageListener {
+
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private WebSocketServer webSocketServer;
+
+    /**
+     * 接收订单消息
+     * @param ordersSubmitDTO
+     */
+    @RabbitListener(queues = RabbitMQConfig.ORDER_QUEUE)
+    public void receiveOrder(OrdersSubmitDTO ordersSubmitDTO) {
+        // 处理下单逻辑
+        OrderSubmitVO orderSubmitVO = orderService.submitOrder(ordersSubmitDTO);
+        log.info("处理下单请求：{}", ordersSubmitDTO);
+        Long uid = Thread.currentThread().getId();
+        // 发送websocket消息给客户端
+        webSocketServer.sendMessageById(String.valueOf(uid), JSON.toJSONString(orderSubmitVO));
+    }
+}
+```
+
+这段代码中，通过@RabbitListener注解接受对应队列的消息，然后处理接收到的订单请求，并将处理后的结果通过WebSocket发送给客户端

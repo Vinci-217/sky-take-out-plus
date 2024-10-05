@@ -1,5 +1,6 @@
 package com.sky.controller.user;
 
+import com.sky.config.RabbitMQConfig;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.result.PageResult;
@@ -11,6 +12,7 @@ import com.sky.vo.OrderVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +28,9 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     /**
      * 用户下单
      * @param ordersSubmitDTO
@@ -35,8 +40,9 @@ public class OrderController {
     @ApiOperation("用户下单")
     public Result<OrderSubmitVO> submit(@RequestBody OrdersSubmitDTO ordersSubmitDTO) {
         log.info("用户下单：{}", ordersSubmitDTO);
-        OrderSubmitVO orderSubmitVO = orderService.submitOrder(ordersSubmitDTO);
-        return Result.success(orderSubmitVO);
+        // 将下单请求发送到 RabbitMQ 队列
+        rabbitTemplate.convertAndSend(RabbitMQConfig.ORDER_EXCHANGE, RabbitMQConfig.ORDER_ROUTING_KEY, ordersSubmitDTO);
+        return Result.success("下单请求已接收，正在处理中...");
     }
 
     /**

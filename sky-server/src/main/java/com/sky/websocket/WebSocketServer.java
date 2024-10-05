@@ -1,5 +1,6 @@
 package com.sky.websocket;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import jakarta.websocket.OnClose;
@@ -8,6 +9,8 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.PathParam;
 import jakarta.websocket.server.ServerEndpoint;
+
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +20,11 @@ import java.util.Map;
  */
 @Component
 @ServerEndpoint("/ws/{sid}")
+@Slf4j
 public class WebSocketServer {
+
+    private Session session; //建立连接的会话
+    private String userId; //当前连接用户id   路径参数
     //存放会话对象
     private static Map<String, Session> sessionMap = new HashMap();
 
@@ -26,6 +33,8 @@ public class WebSocketServer {
      */
     @OnOpen
     public void onOpen(Session session, @PathParam("sid") String sid) {
+        this.session = session;
+        this.userId = sid;
         System.out.println("客户端：" + sid + "建立连接");
         sessionMap.put(sid, session);
     }
@@ -67,4 +76,33 @@ public class WebSocketServer {
             }
         }
     }
+
+    /**
+     *  根据userId发送给用户
+     * @param uid
+     * @param msg
+     */
+    public void sendMessageById(String uid, String msg) {
+        sessionMap.forEach((sessionId, session) -> {
+            //发给指定的接收用户
+            if (sessionId.equals(uid)){
+                sendMessageBySession(session, msg);
+            }
+        });
+    }
+
+    /**
+     *  根据Session发送消息给用户
+     * @param session
+     * @param message
+     */
+    public void sendMessageBySession(Session session, String message) {
+        try {
+            session.getBasicRemote().sendText(message);
+        } catch (IOException e) {
+            log.error("----[ WebSocket ]------给用户发送消息失败---------");
+            e.printStackTrace();
+        }
+    }
+
 }
