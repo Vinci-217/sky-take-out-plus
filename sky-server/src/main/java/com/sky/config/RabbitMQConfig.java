@@ -8,6 +8,7 @@ import org.springframework.amqp.core.Binding;
 
 @Configuration
 public class RabbitMQConfig {
+    // 队列、交换机、路由键
     public static final String ORDER_QUEUE = "order.queue";
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ORDER_ROUTING_KEY = "order.routing.key";

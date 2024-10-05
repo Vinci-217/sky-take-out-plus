@@ -8,7 +8,7 @@
 
 - [x] 引入Spring AI、实现AI对话的功能，基于原有Prompt对用户给出合理的点餐建议
 - [x] 解决Redis缓存穿透、击穿、雪崩
-- [ ] 借助RabbitMQ实现异步订单处理，并使用WebSocket推送订单成功消息，优化用户下单体验
+- [x] 借助RabbitMQ实现异步订单处理，并使用WebSocket推送订单成功消息，优化用户下单体验
 - [ ] 引入ElasticSearch实现菜品全局搜索
 
 ## 优化1：引入AI问答系统
@@ -165,8 +165,6 @@ public class AIConfiguration {
         return output;
     }
 ```
-
-
 
 完成AI对话问答的功能
 
@@ -646,9 +644,49 @@ public class DishController {
 
 在中午和晚上的高峰期时刻，有时候可能会出现用户下订单的时候等待时间过长，不知道订单是否下单成功的情况，于是我们决定采用RabbitMQ对此进行优化。即将订单先放到消息队列中，然后等消息队列里面的订单处理完成之后，再通过WebSocket返回到客户端
 
-RabbitMQ解释（TODO）
+### RabbitMQ
 
-WebSocket解释（TODO）
+RabbitMQ是一个消息队列中间件，首先有生产者和消费者两部分，生产者负责发送信息到MQ、消费者负责从MQ中获取信息。
+
+当消息从生产者发送到MQ时，MQ首先通过Exchange将消息路由转发到某个队列，然后在这个队列里面存储这个消息。
+
+RabbitMQ有四种交换机模式：direct、fanout、topic、headers。默认的模式是direct，即发送的时候携带一个路由键从而转发到某个队列。我们这里使用做简单的模式即可。
+
+### WebSocket
+
+WebSocket是一个双向持久性通信协议。当客户端发送请求到后端时，请求头中包含某些WebSocket的字段，表示想要升级为WebSocket，然后服务器端接受以后进行升级操作，数据以帧的单位进行发送。
+
+苍穹外卖项目中已经预先配置好了WebSocket，这里我们只需要在WebSocketServer类中添加几个方法即可，方便后续调用
+
+```
+    /**
+     *  根据userId发送给用户
+     * @param uid
+     * @param msg
+     */
+    public void sendMessageById(String uid, String msg) {
+        sessionMap.forEach((sessionId, session) -> {
+            //发给指定的接收用户
+            if (sessionId.equals(uid)){
+                sendMessageBySession(session, msg);
+            }
+        });
+    }
+
+    /**
+     *  根据Session发送消息给用户
+     * @param session
+     * @param message
+     */
+    public void sendMessageBySession(Session session, String message) {
+        try {
+            session.getBasicRemote().sendText(message);
+        } catch (IOException e) {
+            log.error("----[ WebSocket ]------给用户发送消息失败---------");
+            e.printStackTrace();
+        }
+    }
+```
 
 Docker安装RabbitMQ
 
@@ -782,3 +820,5 @@ public class OrderMessageListener {
 ```
 
 这段代码中，通过@RabbitListener注解接受对应队列的消息，然后处理接收到的订单请求，并将处理后的结果通过WebSocket发送给客户端
+
+至此，我们就完成了异步订单处理的功能
