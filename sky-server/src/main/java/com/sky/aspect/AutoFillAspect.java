@@ -81,7 +81,7 @@ public class AutoFillAspect {
                 throw new RuntimeException(e);
             }
 
-        } else if (operationType == operationType.UPDATE) {
+        } else if (operationType == OperationType.UPDATE) {
 //            为2个公共字段赋值
             try {
                 Method setUpdateTime = entity.getClass().getDeclaredMethod(AutoFillConstant.SET_UPDATE_TIME, LocalDateTime.class);
