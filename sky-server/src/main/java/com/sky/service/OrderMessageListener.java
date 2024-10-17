@@ -21,6 +21,7 @@ public class OrderMessageListener {
 
     /**
      * 接收订单消息
+     *
      * @param ordersSubmitDTO
      */
     @RabbitListener(queues = RabbitMQConfig.ORDER_QUEUE)
@@ -28,6 +29,7 @@ public class OrderMessageListener {
         // 处理下单逻辑
         OrderSubmitVO orderSubmitVO = orderService.submitOrder(ordersSubmitDTO);
         log.info("处理下单请求：{}", ordersSubmitDTO);
+        // TODO: 这里有问题
         Long uid = Thread.currentThread().getId();
         // 发送websocket消息给客户端
         webSocketServer.sendMessageById(String.valueOf(uid), JSON.toJSONString(orderSubmitVO));
